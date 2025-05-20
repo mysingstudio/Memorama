@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Juego de Memoria - Animales</title>
+  <style>
+    body { margin: 0; background: #f0f0f0; }
+    canvas { display: block; margin: auto; }
+  </style>
+</head>
+<body>
+
+  <!-- Carga Phaser localmente -->
+  <script src="phaser.min.js"></script>
+
+  <script>
+    const config = {
+      type: Phaser.AUTO,
+      width: 800,
+      height: 600,
+      backgroundColor: '#ffffff',
+      scene: {
+        preload: preload,
+        create: create,
+        update: update
+      }
+    };
+
+    const game = new Phaser.Game(config);
+
+    let cartas = [];
+    let cartasSeleccionadas = [];
+    let sonidos = {};
+    let totalPares = 6;
+    let paresEncontrados = 0;
+
+    function preload() {
+      // Cargar imágenes
+      this.load.image('reverso', 'assets/img/reverso.png');
+      this.load.image('conejo', 'assets/img/conejo.png');
+      this.load.image('gato', 'assets/img/gato.png');
+      this.load.image('leon', 'assets/img/leon.png');
+      this.load.image('perro', 'assets/img/perro.png');
+      this.load.image('rana', 'assets/img/rana.png');
+      this.load.image('mono', 'assets/img/mono.png');
+
+      // Cargar sonidos
+      this.load.audio('acierto', 'assets/sonidos/acierto.mp3');
+      this.load.audio('error', 'assets/sonidos/error.mp3');
+      this.load.audio('click', 'assets/sonidos/click.mp3');
+      this.load.audio('victoria', 'assets/sonidos/victoria.mp3');
+    }
+
+    function create() {
+      // Guardar sonidos
+      sonidos.acierto = this.sound.add('acierto');
+      sonidos.error = this.sound.add('error');
+      sonidos.click = this.sound.add('click');
+      sonidos.victoria = this.sound.add('victoria');
+
+      // Nombres de las cartas (pares)
+      let nombres = ['conejo', 'gato', 'leon', 'perro', 'rana', 'mono'];
+      let pares = [...nombres, ...nombres]; // duplicamos para tener pares
+      Phaser.Utils.Array.Shuffle(pares); // desordenamos
+
+      // Mostrar cartas
+      let columnas = 4;
+      let filas = 3;
+      let xInicial = 100;
+      let yInicial = 100;
+      let separacionX = 150;
+      let separacionY = 150;
+
+      for (let i = 0; i < pares.length; i++) {
+        let x = xInicial + (i % columnas) * separacionX;
+        let y = yInicial + Math.floor(i / columnas) * separacionY;
+
+        let carta = this.add.image(x, y, 'reverso').setInteractive();
+        carta.nombre = pares[i];
+        carta.volteada = false;
+        carta.setScale(0.8);
+
+        carta.on('pointerdown', function () {
+          if (cartasSeleccionadas.length < 2 && !this.volteada) {
+            this.setTexture(this.nombre);
+            this.volteada = true;
+            cartasSeleccionadas.push(this);
+            sonidos.click.play();
+
+            if (cartasSeleccionadas.length === 2) {
+              let [c1, c2] = cartasSeleccionadas;
+              if (c1.nombre === c2.nombre) {
+                sonidos.acierto.play();
+                cartasSeleccionadas = [];
+                paresEncontrados++;
+                if (paresEncontrados === totalPares) {
+                  sonidos.victoria.play();
+                  alert("¡Ganaste!");
+                }
+              } else {
+                sonidos.error.play();
+                setTimeout(() => {
+                  c1.setTexture('reverso');
+                  c2.setTexture('reverso');
+                  c1.volteada = false;
+                  c2.volteada = false;
+                  cartasSeleccionadas = [];
+                }, 1000);
+              }
+            }
+          }
+        });
+
+        cartas.push(carta);
+      }
+    }
+
+    function update() {
+      // No usamos update por ahora
+    }
+  </script>
+</body>
+</html>
+
+
